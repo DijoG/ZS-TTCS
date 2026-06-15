@@ -123,8 +123,8 @@ class SegFormerFirst:
         
         try:
             # Load processor and model
-            self.processor = SegFormerImageProcessor.from_pretrained(model_name)
-            self.model = SegFormerForSemanticSegmentation.from_pretrained(
+            self.processor = SegformerImageProcessor.from_pretrained(model_name)
+            self.model = SegformerForSemanticSegmentation.from_pretrained(
                 model_name,
                 torch_dtype=torch.float16 if self.use_amp else torch.float32
             )

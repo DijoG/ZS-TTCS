@@ -73,8 +73,7 @@ class FormanGradientSegmentor:
         max_crown_size: int = 5000,       # Maximum crown size in pixels
         smoothing_sigma: float = 0.0,      # Additional smoothing (0 = use Step 2 smoothing)
         use_cpp: bool = True,               # Use C++ backend if available
-        n_threads: int = -1,                 # Number of threads (-1 = all)
-        output_format: str = 'geojson'       # 'geojson', 'shapefile', 'both'
+        n_threads: int = -1                  # Number of threads (-1 = all)
     ):
         """
         Initialize Forman gradient segmentor.
@@ -94,7 +93,6 @@ class FormanGradientSegmentor:
         self.smoothing_sigma = smoothing_sigma
         self.use_cpp = use_cpp and CPP_AVAILABLE
         self.n_threads = n_threads if n_threads > 0 else None
-        self.output_format = output_format
         
         logger.info("=" * 60)
         logger.info("ZS-TTCS - Step 3: Forman Gradient Segmentation")
@@ -561,18 +559,12 @@ class FormanGradientSegmentor:
                     )
                     
                     if not gdf.empty:
-                        # Save GeoJSON
-                        geojson_path = output_dir / f"{base_name}_crowns.geojson"
-                        gdf.to_file(geojson_path, driver='GeoJSON')
-                        result['output_geojson'] = str(geojson_path)
+                        # Save as GeoPackage (single file, no sidecar files!)
+                        gpkg_path = output_dir / f"{base_name}_crowns.gpkg"
+                        gdf.to_file(gpkg_path, driver='GPKG')
+                        result['output_gpkg'] = str(gpkg_path)
                         
-                        # Save Shapefile if requested
-                        if self.output_format in ['shapefile', 'both']:
-                            shp_path = output_dir / f"{base_name}_crowns.shp"
-                            gdf.to_file(shp_path)
-                            result['output_shapefile'] = str(shp_path)
-                        
-                        logger.info(f"   Saved {len(gdf)} crown polygons")
+                        logger.info(f"   Saved {len(gdf)} crown polygons to {gpkg_path}")
                 
                 # Save raster segmentation
                 if save_raster and seg_results['crown_masks']:
@@ -972,14 +964,6 @@ def main():
         '--resume',
         action='store_true',
         help='Skip already processed files'
-    )
-    
-    # Output options
-    parser.add_argument(
-        '--format',
-        choices=['geojson', 'shapefile', 'both'],
-        default='geojson',
-        help='Vector output format (default: geojson)'
     )
     
     parser.add_argument(
