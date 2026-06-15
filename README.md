@@ -32,26 +32,16 @@ pip install git+https://github.com/DijoG/ZS-TTCS.git
 ```
 ## 🚀 Quick Start
 
-### Command line (batch processing)
+### Complete pipeline (one command)
 ```bash
 # Process a single image
-zs-ttcs all drone_image.tif --output ./results --viz
+zs-ttcs all drone_image.tif --output ./results 
 
 # Process entire directory
-zs-ttcs all ./drone_survey/ --batch --output ./results --viz
+zs-ttcs all ./drone_survey/ --batch --output ./results 
 ```
-### Python API
-```python
-from zs_ttcs import complete_pipeline
 
-# Run full pipeline
-results = complete_pipeline("drone_image.tif", output_dir="./results")
-
-# Access results as GeoDataFrame
-crowns = results['crowns']
-print(f"Found {len(crowns)} tree crowns")
-```
-### Step-by-step
+### Step-by-step (for parameter tuning)
 ```bash
 # Step 1: Extract canopy mask
 zs-ttcs-step1 image.tif --output ./masks --viz
@@ -60,39 +50,133 @@ zs-ttcs-step1 image.tif --output ./masks --viz
 zs-ttcs-step2 image.tif --mask ./masks/image_mask.npy --output ./indices --viz
 
 # Step 3: Segment crowns
-zs-ttcs-step3 ./indices/image_masked_index.tif --output ./crowns --viz --format geojson
+zs-ttcs-step3 ./indices/image_masked_index.tif --output ./crowns --viz
 ```
-## 📊 Parameters
+
+### Python API
+```python
+from zs_ttcs import complete_pipeline
+
+results = complete_pipeline("drone_image.tif", output_dir="./results")
+crowns = results['crowns']  # GeoDataFrame
+print(f"Found {len(crowns)} tree crowns")
+```
+## 🎛️ Command Reference
+
+### Step 1: SegFormer (semantic mask)
+```bash
+zs-ttcs-step1 input.tif --output ./masks --threshold 0.5 --model b5 --viz
+```
 | Parameter | Default | Description |
 |:---|:---|:---|
-| `--persistence` | 0.05 | Critical point filtering (lower = more sensitive) |
-| `--min-size` | 50 | Minimum crown size in pixels |
-| `--max-size` | 5000 | Maximum crown size in pixels |
-| `--index` | exg | Vegetation index (exg, ndvi, vari, gli) |
-| `--smooth` | 1.0 | Gaussian smoothing sigma |
+| input | (required) | Image file or directory |
+| --output, -o | ./output | Output directory |
+| --threshold | 0.5 | Confidence threshold (0-1, lower = more canopy) |
+| --model | b5 | Model size: b0 (fast) to b5 (accurate) |
+| --viz | False | Save visualization image |
+| --batch | False | Process entire directory |
+
+### Step 2: Vegetation index
+```bash
+zs-ttcs-step2 input.tif --mask mask.npy --index exg --smooth 1.0 --viz
+```
+| Parameter | Default | Description |
+|:---|:---|:---|
+| input | (required) | Image file or directory |
+| --mask, -m | (required) | Mask file from Step 1 |
+| --output, -o | ./step2_output | Output directory |
+| --index | exg | Vegetation index: exg, ndvi, vari, gli |
+| --smooth | 1.0 | Gaussian smoothing sigma (0 = no smoothing) |
+| --viz | False | Save visualization image |
+| --batch | False | Process entire directory |
+
+### Step 3: Forman gradient (crown segmentation)
+```bash
+zs-ttcs-step3 masked_index.tif --persistence 0.05 --min-size 50 --max-size 5000 --format geojson --viz
+```
+| Parameter | Default | Description |
+|:---|:---|:---|
+| input | (required) | Masked index file from Step 2 |
+| --output, -o | ./step3_output | Output directory |
+| --persistence | 0.05 | Critical point filter (lower = more crowns) |
+| --min-size | 50 | Minimum crown size in pixels |
+| --max-size | 5000 | Maximum crown size in pixels |
+| --smooth | 0.0 | Additional Gaussian smoothing |
+| --format | geojson | Output: geojson, shapefile, both |
+| --viz | False | Save visualization image |
+| --batch | False | Process entire directory |
+
+### Common options (all steps)
+| Option | Description |
+|:---|:---|
+| `--batch` | Process all images in input directory |
+| `--resume` | Skip already processed files |
+| `--max-images` | Limit number of images to process |
 
 ## 📁 Output Structure
 ```text
 results/
-├── step1_masks/           # Binary canopy masks (.npy, .tif)
-├── step2_indices/         # Masked vegetation indices (.tif, .npy)
-└── step3_crowns/          # Final crowns (.geojson, .shp, .csv, .tif)
+├── step1_masks/
+│   ├── image_mask.npy
+│   └── image_viz.png
+├── step2_indices/
+│   ├── image_masked_index.tif
+│   ├── image_masked_index.npy
+│   └── image_step2_viz.png
+└── step3_crowns/
+    ├── image_crowns.geojson
+    ├── image_crowns.shp (if format=both)
+    ├── image_segmentation.tif
+    ├── image_crown_properties.csv
+    └── image_step3_viz.png
 ``` 
+
 ## 🌲 Example Results
 
-Paste here: Input (RGB) → Canopy Mask → Crown Segmentation
+...
+
+## 🔧 Troubleshooting
+
+### ImportError: cannot import name 'SegFormerImageProcessor'
+**Solution:** Use the correct class names (lowercase 'f'):
+```python
+from transformers import SegformerImageProcessor, SegformerForSemanticSegmentation
+```
+### C++ module not found (_forman)
+```bash
+pip install -e . --force-reinstall
+```
+### Rust compilation error when installing transformers
+Solution: Use Python 3.10 with conda:
+```bash
+conda create -n zs-ttcs python=3.10
+conda activate zs-ttcs
+pip install transformers==4.28.1
+```
+### Out of memory error
+Solution: Process smaller tiles or use Python fallback:
+```bash
+zs-ttcs-step3 input.tif --no-cpp
+```
+### No crowns detected
+Solution: Adjust persistence threshold and min-size:
+```bash
+zs-ttcs-step3 input.tif --persistence 0.03 --min-size 30
+```
+### Batch processing fails
+Solution: Ensure masks have matching filenames:
+```text
+images/image1.tif  →  masks/image1_mask.npy
+images/image2.tif  →  masks/image2_mask.npy
+``` 
 
 ## 📚 Dependencies
--`Python 3.10`
--`PyTorch, Transformers (SegFormer)`
--`NumPy, SciPy, scikit-image`
--`Rasterio, GeoPandas, Shapely`
--`pybind11 (C++ bindings)`
+    -`Python 3.10`
+    -`PyTorch, Transformers (SegFormer)`
+    -`NumPy, SciPy, scikit-image`
+    -`Rasterio, GeoPandas, Shapely`
+    -`pybind11 (C++ bindings)`
 
 ## 📄 License
 
 MIT License - see LICENSE file
-
-## 📧 Contact
-
-Gergo Dioszegi - dijogergo@gmail.com
