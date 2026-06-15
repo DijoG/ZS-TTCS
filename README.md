@@ -117,18 +117,17 @@ zs-ttcs-step3 masked_index.tif --persistence 0.05 --min-size 50 --max-size 5000 
 ```text
 results/
 ├── step1_masks/
-│   ├── image_mask.npy
-│   └── image_viz.png
+│   ├── image_mask.npy             # Binary canopy mask (for Step 2)
+│   └── image_viz.png              # Visual verification
 ├── step2_indices/
-│   ├── image_masked_index.tif
-│   ├── image_masked_index.npy
-│   └── image_step2_viz.png
+│   ├── image_masked_index.tif     # Masked vegetation index (for Step 3)
+│   ├── image_masked_index.npy     # Fast-load version
+│   └── image_step2_viz.png        # Visual verification
 └── step3_crowns/
-    ├── image_crowns.geojson
-    ├── image_crowns.shp (if format=both)
-    ├── image_segmentation.tif
-    ├── image_crown_properties.csv
-    └── image_step3_viz.png
+    ├── image_crowns.gpkg          # ← SINGLE FILE! All crown polygons + attributes
+    ├── image_segmentation.tif     # Raster with crown IDs
+    ├── image_crown_properties.csv # Crown statistics (area, intensity, etc.)
+    └── image_step3_viz.png        # Visual verification
 ``` 
 
 ## 🌲 Example Results
