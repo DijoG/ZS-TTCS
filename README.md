@@ -171,11 +171,11 @@ images/image2.tif  →  masks/image2_mask.npy
 ``` 
 
 ## 📚 Dependencies
-    -`Python 3.10`
-    -`PyTorch, Transformers (SegFormer)`
-    -`NumPy, SciPy, scikit-image`
-    -`Rasterio, GeoPandas, Shapely`
-    -`pybind11 (C++ bindings)`
+    -Python 3.10
+    -PyTorch, Transformers (SegFormer)
+    -NumPy, SciPy, scikit-image
+    -Rasterio, GeoPandas, Shapely
+    -pybind11 (C++ bindings)
 
 ## 📄 License
 
