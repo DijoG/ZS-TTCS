@@ -1,0 +1,11 @@
+# MANIFEST.in
+include README.md
+include LICENSE
+include requirements.txt
+include setup.py
+
+# Include C++ source files
+recursive-include cpp *.cpp *.h
+
+# Include package data
+include zs_ttcs/py.typed
