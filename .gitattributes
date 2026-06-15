@@ -1,0 +1,18 @@
+# .gitattributes
+*.py linguist-language=Python
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+*.hpp linguist-language=C++
+*.md linguist-documentation
+*.txt linguist-documentation
+*.in linguist-documentation
+*.toml linguist-documentation
+*.json linguist-documentation
+
+# Mark generated files
+*.pyc linguist-generated=true
+*.pyd linguist-generated=true
+*.so linguist-generated=true
+
+# Explicitly mark C++ core
+cpp/* linguist-language=C++
